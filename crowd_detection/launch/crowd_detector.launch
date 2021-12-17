@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <launch>
-    <node name="usb_cam" pkg="usb_cam" type="usb_cam_node">
+    <!--<node name="usb_cam" pkg="usb_cam" type="usb_cam_node">
         <param name="image_width" value="1280" />
         <param name="image_height" value="720" />
         <param name="image_fps" value="30" />
-    </node> 
+    </node> -->
+    <node name="crowd_detector" pkg="crowd_detection" type="crowd_detector.py" output="screen"/>
 
     <!--include file="$(find darknet_ros)/launch/darknet_ros.launch"-->
-    <include file="$(find darknet_ros)/launch/yolo_v3.launch">
+    <!--<include file="$(find darknet_ros)/launch/yolo_v3.launch">
         <arg name="image" value="/usb_cam/image_raw"/>
-    </include>
+    </include> -->
 
-    <node name="crowd_detector" pkg="crowd_detection" type="crowd_detector.py" output="screen"/>
+    <include file="$(find darknet_ros)/launch/yolo_v3.launch">
+        <arg name="image" value="image_raw"/>
+    </include>
 
 </launch>
