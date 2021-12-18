@@ -154,34 +154,51 @@ class CrowdDetector(object):
                 overlap_x = self.get_overlap(check_human["box"][:2], human["box"][:2])
                 overlap_y = self.get_overlap(check_human["box"][2:], human["box"][2:])
 
-                check_x = (check_human["box"][1] + check_human["box"][0])/2
-                x_ = (human["box"][1] + human["box"][0])/2
+                check_x = check_human["position"][0]
+                check_y = check_human["position"][1]
 
-                check_y = (check_human["box"][3] + check_human["box"][2])/2
-                y_ = (human["box"][3] + human["box"][2])/2
+                x_ = human["position"][0]
+                y_ = human["position"][1]
 
-                check_depth = aligned_depth_frame.get_distance(check_human["position"][0], check_human["position"][1])
-                depth_ = aligned_depth_frame.get_distance(human["position"][0], human["position"][1])
+                check_depth = aligned_depth_frame.get_distance(check_x, check_y)
+                depth_ = aligned_depth_frame.get_distance(x_, y_)
 
                 # horizontal angle1 between camera center and human
                 angle_from_camera_center1 = self.calculate_angle(check_x, check_y)[0]
-                lr_flag1 = 1 if angle_from_camera_center1>=0 else -1
-                dis_from_camera_center1 = lr_flag1*(check_depth * math.cos(math.radians(90.0 - abs(angle_from_camera_center1))))
+                lr_flag1 = 1 if angle_from_camera_center1>=0 else -1 # left right flag
+                dis_from_camera_center1 = lr_flag1 * (check_depth * math.cos(math.radians(90.0 - abs(angle_from_camera_center1))))
 
                 # horizontal angle2 between camera center and human
                 angle_from_camera_center2 = self.calculate_angle(x_, y_)[0]
-                lr_flag2 = 1 if angle_from_camera_center2>=0 else -1
-                dis_from_camera_center2 = lr_flag2*(depth_ * math.cos(math.radians(90.0 - abs(angle_from_camera_center2))))
+                lr_flag2 = 1 if angle_from_camera_center2>=0 else -1 # left right flag
+                dis_from_camera_center2 = lr_flag2 * (depth_ * math.cos(math.radians(90.0 - abs(angle_from_camera_center2))))
+
+                # vertical angle1 between camera center and human
+                vertical_angle_from_camera_center1 = self.calculate_angle(check_x, check_y)[1]
+                ud_flag1 = -1 if vertical_angle_from_camera_center1>=0 else 1 # up down flag
+                vertical_dis_from_camera_center1 = ud_flag1 * (check_depth * math.cos(math.radians(90.0 - abs(vertical_angle_from_camera_center1))))
+
+                # vertical angle2 between camera center and human
+                vertical_angle_from_camera_center2 = self.calculate_angle(x_, y_)[1]
+                ud_flag2 = -1 if vertical_angle_from_camera_center2>=0 else 1 # up down flag
+                vertical_dis_from_camera_center2 = ud_flag2 * (depth_ * math.cos(math.radians(90.0 - abs(vertical_angle_from_camera_center2))))
 
                 total_dis_horizontal = max(dis_from_camera_center1, dis_from_camera_center2) - min(dis_from_camera_center1, dis_from_camera_center2)
-                print "distance1:", dis_from_camera_center1
-                print "distance2:", dis_from_camera_center2
-                print "distance between", total_dis_horizontal
+                total_dis_vertical = max(vertical_dis_from_camera_center1, vertical_dis_from_camera_center2) - min(vertical_dis_from_camera_center1, vertical_dis_from_camera_center2)
+
+                print "horizontal distance1:", dis_from_camera_center1
+                print "horizontal distance2:", dis_from_camera_center2
+                print "horizontal distance between", total_dis_horizontal
+
+                print "vertical distance1:", vertical_dis_from_camera_center1
+                print "vertical distance2:", vertical_dis_from_camera_center2
+                print "vertical distance between", total_dis_vertical
 
                 #self.debug_human_position(check_x, check_y, check_depth)
                 #self.debug_human_position(x_, y_, depth_)
 
-                if (total_dis_horizontal <= 1.0) and (abs(check_y - y_) <= 140) and (abs(check_depth - depth_) <= 0.7):
+                # find crowd from people staying within horizontal: 1.2 meter and vertical: 1.0 meter and far_near: 0.7 meter
+                if (total_dis_horizontal <= 1.2) and (total_dis_vertical <= 1.0) and (abs(check_depth - depth_) <= 0.7):  
                     group = [copy.deepcopy(check_human), copy.deepcopy(human)]
                     if group not in self.crowd_data:
                         self.crowd_data.append(group)
